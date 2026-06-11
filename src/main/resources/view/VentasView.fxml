@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sfi.controller.VentasController"
+      prefWidth="900" prefHeight="680"
+      style="-fx-padding: 16;">
+
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-bar">
+        <Label text="Ventas"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userLabel" style="-fx-font-size: 13px; -fx-text-fill: #86868b;"/>
+        <Button fx:id="adminButton" text="Admin" onAction="#handleGoToAdmin" visible="false"
+                styleClass="button-text"/>
+        <Button text="Salir" onAction="#handleLogout" styleClass="button-text"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Cliente -->
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Cliente" style="-fx-font-weight: 500; -fx-text-fill: #6e6e73;"/>
+        <ComboBox fx:id="clientCombo" prefWidth="300" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <!-- Producto + cantidad + agregar -->
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <ComboBox fx:id="productCombo" promptText="Producto" prefWidth="350" HBox.hgrow="ALWAYS"/>
+        <TextField fx:id="quantityField" promptText="Cant" prefWidth="70"/>
+        <Button text="Agregar" onAction="#handleAddItem" styleClass="button-primary"/>
+    </HBox>
+
+    <!-- Items table -->
+    <TableView fx:id="itemsTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colItemProduct" text="Producto" prefWidth="280"/>
+            <TableColumn fx:id="colItemQty" text="Cant" prefWidth="60"/>
+            <TableColumn fx:id="colItemPrice" text="Precio" prefWidth="100"/>
+            <TableColumn fx:id="colItemSubtotal" text="Subtotal" prefWidth="100"/>
+            <TableColumn fx:id="colItemAction" text="" prefWidth="60"/>
+        </columns>
+    </TableView>
+
+    <!-- Descuento por producto -->
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Dto. por producto:" style="-fx-text-fill: #6e6e73; -fx-font-size: 12px;"/>
+        <ComboBox fx:id="itemDiscountTypeCombo" prefWidth="130"/>
+        <TextField fx:id="itemDiscountValueField" promptText="Valor" prefWidth="80" disable="true"/>
+        <Button text="Aplicar" onAction="#handleApplyItemDiscount"/>
+    </HBox>
+
+    <!-- Descuento global -->
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Dto. global:" style="-fx-text-fill: #6e6e73; -fx-font-size: 12px;"/>
+        <ComboBox fx:id="discountTypeCombo" prefWidth="130"/>
+        <TextField fx:id="discountValueField" promptText="Valor" prefWidth="80"/>
+        <Button text="Aplicar" onAction="#handleApplyDiscount"/>
+    </HBox>
+
+    <GridPane hgap="16" vgap="4" styleClass="summary-card">
+        <Label text="Subtotal" GridPane.rowIndex="0" GridPane.columnIndex="0"
+               style="-fx-text-fill: #6e6e73;"/>
+        <Label fx:id="subtotalLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <Label text="Descuento" GridPane.rowIndex="1" GridPane.columnIndex="0"
+               style="-fx-text-fill: #6e6e73;"/>
+        <Label fx:id="discountLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label text="Monto imponible" GridPane.rowIndex="2" GridPane.columnIndex="0"
+               style="-fx-text-fill: #6e6e73;"/>
+        <Label fx:id="taxableLabel" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="IVA 21%" GridPane.rowIndex="3" GridPane.columnIndex="0"
+               style="-fx-text-fill: #6e6e73;"/>
+        <Label fx:id="taxLabel" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <Label text="TOTAL" GridPane.rowIndex="4" GridPane.columnIndex="0"
+               styleClass="label-total"/>
+        <Label fx:id="totalLabel" GridPane.rowIndex="4" GridPane.columnIndex="1"
+               styleClass="label-total"/>
+    </GridPane>
+
+    <Button text="Emitir Factura" onAction="#handleEmitirFactura" maxWidth="300"
+            styleClass="button-primary" prefHeight="42"/>
+</VBox>

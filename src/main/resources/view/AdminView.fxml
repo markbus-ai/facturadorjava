@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sfi.controller.AdminController"
+      prefWidth="960" prefHeight="700"
+      style="-fx-padding: 16;">
+
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-bar">
+        <Label text="Administracion"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userLabel" style="-fx-font-size: 13px; -fx-text-fill: #86868b;"/>
+        <Button text="Cerrar sesion" onAction="#handleLogout" styleClass="button-text"/>
+    </HBox>
+
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+        <!-- Facturas -->
+        <Tab text="Facturas">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="invoiceTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colInvNumber" text="Numero" prefWidth="180"/>
+                        <TableColumn fx:id="colInvClient" text="Cliente" prefWidth="150"/>
+                        <TableColumn fx:id="colInvUser" text="Usuario" prefWidth="100"/>
+                        <TableColumn fx:id="colInvDate" text="Fecha" prefWidth="100"/>
+                        <TableColumn fx:id="colInvTotal" text="Total" prefWidth="100"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <Button text="Nueva Factura" onAction="#handleNuevaFactura" styleClass="button-primary"/>
+                    <Button text="Eliminar factura seleccionada" onAction="#handleDeleteInvoice" styleClass="button-danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Actualizar" onAction="#handleRefresh"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Productos -->
+        <Tab text="Productos">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="productTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colProdCode" text="Codigo" prefWidth="100"/>
+                        <TableColumn fx:id="colProdName" text="Nombre" prefWidth="220"/>
+                        <TableColumn fx:id="colProdPrice" text="Precio" prefWidth="100"/>
+                        <TableColumn fx:id="colProdStock" text="Stock" prefWidth="80"/>
+                        <TableColumn fx:id="colProdMinStock" text="Stock Min." prefWidth="80"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <Button text="Agregar" onAction="#handleAddProduct" styleClass="button-primary"/>
+                    <Button text="Editar" onAction="#handleEditProduct"/>
+                    <Button text="Eliminar" onAction="#handleDeleteProduct" styleClass="button-danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Actualizar" onAction="#handleRefresh"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Clientes -->
+        <Tab text="Clientes">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="clientTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colCliName" text="Nombre" prefWidth="220"/>
+                        <TableColumn fx:id="colCliAddress" text="Direccion" prefWidth="220"/>
+                        <TableColumn fx:id="colCliPhone" text="Telefono" prefWidth="150"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <Button text="Agregar" onAction="#handleAddClient" styleClass="button-primary"/>
+                    <Button text="Editar" onAction="#handleEditClient"/>
+                    <Button text="Eliminar" onAction="#handleDeleteClient" styleClass="button-danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Actualizar" onAction="#handleRefresh"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Usuarios -->
+        <Tab text="Usuarios">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colUsrUsername" text="Usuario" prefWidth="200"/>
+                        <TableColumn fx:id="colUsrRole" text="Rol" prefWidth="120"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <ComboBox promptText="Rol" fx:id="roleCombo" prefWidth="120"/>
+                    <Button text="Aplicar Rol" onAction="#handleChangeRole"/>
+                    <Button text="Crear Usuario" onAction="#handleCreateUser" styleClass="button-primary"/>
+                    <Button text="Eliminar" onAction="#handleDeleteUser" styleClass="button-danger"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Stock Bajo -->
+        <Tab text="Stock Bajo">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="lowStockTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colLowName" text="Producto" prefWidth="300"/>
+                        <TableColumn fx:id="colLowStock" text="Stock Actual" prefWidth="100"/>
+                        <TableColumn fx:id="colLowMinStock" text="Stock Min." prefWidth="100"/>
+                        <TableColumn fx:id="colLowMissing" text="Faltante" prefWidth="100"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <Button text="Actualizar" onAction="#handleRefreshLowStock"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Reportes -->
+        <Tab text="Reportes">
+            <VBox spacing="12" style="-fx-padding: 16 0 0 0;">
+                <Label text="Metricas de facturacion" styleClass="label-section"/>
+                <GridPane hgap="15" vgap="8">
+                    <Label text="Total facturado:" GridPane.rowIndex="0" GridPane.columnIndex="0"
+                           style="-fx-text-fill: #6e6e73;"/>
+                    <Label fx:id="totalFacturadoLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                           styleClass="label-total"/>
+                    <Label text="Cantidad de facturas:" GridPane.rowIndex="1" GridPane.columnIndex="0"
+                           style="-fx-text-fill: #6e6e73;"/>
+                    <Label fx:id="cantidadFacturasLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                           styleClass="label-total"/>
+                </GridPane>
+                <Button text="Actualizar" onAction="#handleRefresh" maxWidth="200"
+                        styleClass="button-primary"/>
+            </VBox>
+        </Tab>
+    </TabPane>
+</VBox>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" spacing="0" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sfi.controller.LoginController"
+       prefWidth="380" prefHeight="460">
+
+    <VBox spacing="4" alignment="CENTER">
+        <Label text="sfi" styleClass="label-title"/>
+        <Label text="Sistema de Facturacion Integrado" styleClass="label-subtitle"/>
+    </VBox>
+
+    <VBox spacing="4" maxWidth="260" style="-fx-padding: 40 0 0 0;">
+        <Label text="Usuario" styleClass="field-label"/>
+        <TextField fx:id="usernameField" promptText="Ingrese su usuario"/>
+    </VBox>
+
+    <VBox spacing="4" maxWidth="260" style="-fx-padding: 16 0 0 0;">
+        <Label text="Contrasena" styleClass="field-label"/>
+        <PasswordField fx:id="passwordField" promptText="Ingrese su contrasena"/>
+    </VBox>
+
+    <Label fx:id="errorLabel" styleClass="label-error" visible="false"
+           style="-fx-padding: 20 0 0 0;"/>
+
+    <VBox maxWidth="260" style="-fx-padding: 16 0 0 0;">
+        <Button text="Ingresar" onAction="#handleLogin" maxWidth="260" prefHeight="42"
+                styleClass="button-primary"/>
+    </VBox>
+</VBox>

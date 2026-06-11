@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sfi.controller.RepositorController"
+      prefWidth="900" prefHeight="650"
+      style="-fx-padding: 16;">
+
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-bar">
+        <Label text="Inventario"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userLabel" style="-fx-font-size: 13px; -fx-text-fill: #86868b;"/>
+        <Button text="Cerrar sesion" onAction="#handleLogout" styleClass="button-text"/>
+    </HBox>
+
+    <Label text="Inventario de productos" styleClass="label-section"/>
+
+    <TableView fx:id="productTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colProdName" text="Nombre" prefWidth="300"/>
+            <TableColumn fx:id="colProdPrice" text="Precio" prefWidth="100"/>
+            <TableColumn fx:id="colProdStock" text="Stock" prefWidth="100"/>
+            <TableColumn fx:id="colProdMinStock" text="Stock Min." prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <HBox spacing="8">
+        <Button text="Actualizar Stock" onAction="#handleUpdateStock" styleClass="button-primary"/>
+        <Button text="Actualizar Productos" onAction="#handleRefreshProducts"/>
+    </HBox>
+
+    <Label text="Productos con stock bajo" styleClass="label-section" style="-fx-padding: 8 0 0 0;"/>
+
+    <TableView fx:id="lowStockTable" prefHeight="140" maxHeight="200">
+        <columns>
+            <TableColumn fx:id="colLowName" text="Producto" prefWidth="300"/>
+            <TableColumn fx:id="colLowStock" text="Stock Actual" prefWidth="100"/>
+            <TableColumn fx:id="colLowMinStock" text="Stock Min." prefWidth="100"/>
+            <TableColumn fx:id="colLowMissing" text="Faltante" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <Button text="Actualizar Reporte" onAction="#handleRefreshLowStock"/>
+</VBox>

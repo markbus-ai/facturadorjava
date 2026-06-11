@@ -1,0 +1,8 @@
+target/
+*.jar
+*.tar.gz
+.classpath
+.project
+.settings/
+dependency-reduced-pom.xml
+*png
