@@ -50,13 +50,14 @@ public class Invoice {
     }
 
     public void applyDiscount(DescuentoStrategy strategy) {
+        InvoiceCalculator.CalculationResult res = InvoiceCalculator.calculateInvoice(this.items, strategy, this.taxRate);
+        this.subtotal = res.afterItemsSubtotal;
         this.discountType = strategy.getType();
         this.discountValue = strategy.getValue();
-        this.discountAmount = strategy.calculate(this.subtotal);
-        this.taxableAmount = this.subtotal.subtract(this.discountAmount);
-        this.taxAmount = this.taxableAmount.multiply(this.taxRate)
-                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-        this.total = this.taxableAmount.add(this.taxAmount);
+        this.discountAmount = res.globalDiscountAmount;
+        this.taxableAmount = res.taxableAmount;
+        this.taxAmount = res.taxAmount;
+        this.total = res.total;
     }
 
     public Long getId() { return id; }

@@ -5,11 +5,11 @@ import java.math.BigDecimal;
 public class DescuentoNominal implements DescuentoStrategy {
     private final BigDecimal monto;
 
-    public DescuentoNominal(double monto) {
-        if (monto < 0) {
+    public DescuentoNominal(BigDecimal monto) {
+        if (monto == null || monto.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El monto no puede ser negativo");
         }
-        this.monto = BigDecimal.valueOf(monto);
+        this.monto = monto;
     }
 
     @Override

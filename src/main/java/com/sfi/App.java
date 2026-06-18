@@ -89,6 +89,8 @@ public class App extends Application {
       saveWindowState("repositor");
     else if (currentSceneKey.equals("ventas"))
       saveWindowState("ventas");
+    else if (currentSceneKey.equals("user_invoices"))
+      saveWindowState("user_invoices");
 
     primaryStage.setResizable(true);
     if (authService.isAdmin()) {
@@ -96,7 +98,7 @@ public class App extends Application {
     } else if (authService.isRepositor()) {
       loadRepositorScene();
     } else {
-      loadVentasScene();
+      loadUserInvoicesScene();
     }
   }
 
@@ -139,6 +141,20 @@ public class App extends Application {
       restoreOrSetWindow("ventas", 900, 600, 650, 500);
     } catch (IOException e) {
       throw new RuntimeException("Error al cargar VentasView", e);
+    }
+  }
+
+  public static void loadUserInvoicesScene() {
+    try {
+      Scene scene = new Scene(
+          FXMLLoader.load(App.class.getResource("/view/UserInvoicesView.fxml")),
+          900, 600);
+      scene.getStylesheets().add(STYLESHEET);
+      currentSceneKey = "user_invoices";
+      primaryStage.setScene(scene);
+      restoreOrSetWindow("user_invoices", 900, 600, 650, 500);
+    } catch (IOException e) {
+      throw new RuntimeException("Error al cargar UserInvoicesView", e);
     }
   }
 

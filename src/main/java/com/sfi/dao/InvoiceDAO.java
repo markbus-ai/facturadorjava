@@ -73,13 +73,52 @@ public class InvoiceDAO {
     }
 
     public void delete(Long id) {
-        String sql = "DELETE FROM invoices WHERE id = ?";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setLong(1, id);
-            stmt.executeUpdate();
+        String sqlSelectItems = "SELECT product_id, quantity FROM invoice_items WHERE invoice_id = ?";
+        String sqlUpdateStock = "UPDATE products SET stock = stock + ? WHERE id = ?";
+        String sqlDeleteInvoice = "DELETE FROM invoices WHERE id = ?";
+        
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // Get invoice items first
+                List<InvoiceItem> items = new ArrayList<>();
+                try (PreparedStatement stmtSelect = conn.prepareStatement(sqlSelectItems)) {
+                    stmtSelect.setLong(1, id);
+                    try (ResultSet rs = stmtSelect.executeQuery()) {
+                        while (rs.next()) {
+                            InvoiceItem item = new InvoiceItem();
+                            item.setProductId(rs.getLong("product_id"));
+                            item.setQuantity(rs.getInt("quantity"));
+                            items.add(item);
+                        }
+                    }
+                }
+                
+                // Restore stock
+                try (PreparedStatement stmtStock = conn.prepareStatement(sqlUpdateStock)) {
+                    for (InvoiceItem item : items) {
+                        stmtStock.setInt(1, item.getQuantity());
+                        stmtStock.setLong(2, item.getProductId());
+                        stmtStock.addBatch();
+                    }
+                    stmtStock.executeBatch();
+                }
+                
+                // Delete invoice (will cascade delete items)
+                try (PreparedStatement stmtDelete = conn.prepareStatement(sqlDeleteInvoice)) {
+                    stmtDelete.setLong(1, id);
+                    stmtDelete.executeUpdate();
+                }
+                
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw new RuntimeException("Error al eliminar factura y restaurar stock, transaccion revertida: " + e.getMessage(), e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
-            throw new RuntimeException("Error al eliminar factura ID: " + id, e);
+            throw new RuntimeException("Error de conexion al eliminar factura ID: " + id, e);
         }
     }
 
@@ -88,7 +127,8 @@ public class InvoiceDAO {
                 + "discount_amount, taxable_amount, tax_rate, tax_amount, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlItem = "INSERT INTO invoice_items (invoice_id, product_id, quantity, unit_price, subtotal, discount_type, discount_value) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        String sqlUpdateStock = "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?";
+        String sqlSelectStock = "SELECT stock, name FROM products WHERE id = ? FOR UPDATE";
+        String sqlUpdateStock = "UPDATE products SET stock = stock - ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
@@ -112,15 +152,32 @@ public class InvoiceDAO {
                     stmt.setBigDecimal(11, invoice.getTotal());
                     stmt.executeUpdate();
                     try (ResultSet keys = stmt.getGeneratedKeys()) {
-                        keys.next();
+                        if (!keys.next()) {
+                            throw new SQLException("No se pudo obtener el ID generado para la factura");
+                        }
                         invoiceId = keys.getLong(1);
                     }
                 }
 
-                try (PreparedStatement stmtItem = conn.prepareStatement(sqlItem);
-                     PreparedStatement stmtStock = conn.prepareStatement(sqlUpdateStock)) {
+                try (PreparedStatement stmtSelectStock = conn.prepareStatement(sqlSelectStock);
+                     PreparedStatement stmtStock = conn.prepareStatement(sqlUpdateStock);
+                     PreparedStatement stmtItem = conn.prepareStatement(sqlItem)) {
 
                     for (InvoiceItem item : invoice.getItems()) {
+                        // Check stock FOR UPDATE
+                        stmtSelectStock.setLong(1, item.getProductId());
+                        try (ResultSet rs = stmtSelectStock.executeQuery()) {
+                            if (!rs.next()) {
+                                throw new SQLException("Producto no encontrado ID: " + item.getProductId());
+                            }
+                            int currentStock = rs.getInt("stock");
+                            String prodName = rs.getString("name");
+                            if (currentStock < item.getQuantity()) {
+                                throw new SQLException("Stock insuficiente para el producto: " + prodName + " (Disponible: " + currentStock + ", Solicitado: " + item.getQuantity() + ")");
+                            }
+                        }
+
+                        // Insert invoice item
                         stmtItem.setLong(1, invoiceId);
                         stmtItem.setLong(2, item.getProductId());
                         stmtItem.setInt(3, item.getQuantity());
@@ -128,21 +185,12 @@ public class InvoiceDAO {
                         stmtItem.setBigDecimal(5, item.getSubtotal());
                         stmtItem.setString(6, item.getDiscountType().name());
                         stmtItem.setBigDecimal(7, item.getDiscountValue());
-                        stmtItem.addBatch();
+                        stmtItem.executeUpdate();
 
+                        // Deduct stock
                         stmtStock.setInt(1, item.getQuantity());
                         stmtStock.setLong(2, item.getProductId());
-                        stmtStock.setInt(3, item.getQuantity());
-                        stmtStock.addBatch();
-                    }
-
-                    stmtItem.executeBatch();
-
-                    int[] stockUpdates = stmtStock.executeBatch();
-                    for (int affected : stockUpdates) {
-                        if (affected == 0) {
-                            throw new SQLException("Stock insuficiente para uno de los productos");
-                        }
+                        stmtStock.executeUpdate();
                     }
                 }
 
@@ -159,6 +207,20 @@ public class InvoiceDAO {
         } catch (SQLException e) {
             throw new RuntimeException("Error de conexion al emitir factura", e);
         }
+    }
+
+    public boolean existsInvoiceNumber(String invoiceNumber) {
+        String sql = "SELECT COUNT(*) FROM invoices WHERE invoice_number = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, invoiceNumber);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al verificar número de factura: " + invoiceNumber, e);
+        }
+        return false;
     }
 
     public BigDecimal getTotalFacturado() {

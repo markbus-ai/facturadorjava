@@ -6,11 +6,11 @@ import java.math.RoundingMode;
 public class DescuentoPorcentual implements DescuentoStrategy {
     private final BigDecimal porcentaje;
 
-    public DescuentoPorcentual(double porcentaje) {
-        if (porcentaje < 0 || porcentaje > 100) {
+    public DescuentoPorcentual(BigDecimal porcentaje) {
+        if (porcentaje == null || porcentaje.compareTo(BigDecimal.ZERO) < 0 || porcentaje.compareTo(new BigDecimal("100")) > 0) {
             throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
         }
-        this.porcentaje = BigDecimal.valueOf(porcentaje);
+        this.porcentaje = porcentaje;
     }
 
     @Override

@@ -30,4 +30,5 @@ public class User {
 
     public boolean isAdmin() { return role == Role.ADMIN; }
     public boolean isRepositor() { return role == Role.REPOSITOR; }
+    public boolean isUser() { return role == Role.USER; }
 }

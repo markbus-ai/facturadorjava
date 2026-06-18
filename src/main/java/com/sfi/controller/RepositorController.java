@@ -11,6 +11,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import com.sfi.util.UIUtils;
+
 import java.math.BigDecimal;
 import java.net.URL;
 import java.util.Optional;
@@ -82,6 +84,7 @@ public class RepositorController implements Initializable {
         dialog.setTitle("Actualizar Stock");
         dialog.setHeaderText("Stock de: " + sel.getName());
         dialog.setContentText("Nuevo stock:");
+        UIUtils.setMaxLength(dialog.getEditor(), 10);
 
         Optional<String> result = dialog.showAndWait();
         if (result.isEmpty()) return;
@@ -92,6 +95,10 @@ public class RepositorController implements Initializable {
             sel.setStock(newStock);
             productService.update(sel);
             refreshAll();
+            // Re-read updated product to check against current minStock from DB
+            if (newStock < sel.getMinStock()) {
+                showAlert("Advertencia: El stock actual (" + newStock + ") es inferior al stock mínimo (" + sel.getMinStock() + ")");
+            }
         } catch (Exception e) {
             showAlert("Error: " + e.getMessage());
         }

@@ -89,12 +89,13 @@ public class UserDAO {
     }
 
     public void update(User user) {
-        String sql = "UPDATE users SET password = ?, role = ? WHERE id = ?";
+        String sql = "UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, user.getPassword());
-            stmt.setString(2, user.getRole().name());
-            stmt.setLong(3, user.getId());
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, user.getPassword());
+            stmt.setString(3, user.getRole().name());
+            stmt.setLong(4, user.getId());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar usuario ID: " + user.getId(), e);

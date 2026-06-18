@@ -11,13 +11,15 @@ public class Product {
     private BigDecimal price;
     private int stock;
     private int minStock;
+    private Long supplierId;
+    private String supplierName;
     private boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Product() {}
 
-    public Product(Long id, String code, String name, String description, BigDecimal price, int stock, int minStock, boolean active) {
+    public Product(Long id, String code, String name, String description, BigDecimal price, int stock, int minStock, Long supplierId, boolean active) {
         this.id = id;
         this.code = code;
         this.name = name;
@@ -25,7 +27,12 @@ public class Product {
         this.price = price;
         this.stock = stock;
         this.minStock = minStock;
+        this.supplierId = supplierId;
         this.active = active;
+    }
+
+    public Product(Long id, String code, String name, String description, BigDecimal price, int stock, int minStock, boolean active) {
+        this(id, code, name, description, price, stock, minStock, null, active);
     }
 
     public Long getId() { return id; }
@@ -42,6 +49,10 @@ public class Product {
     public void setStock(int stock) { this.stock = stock; }
     public int getMinStock() { return minStock; }
     public void setMinStock(int minStock) { this.minStock = minStock; }
+    public Long getSupplierId() { return supplierId; }
+    public void setSupplierId(Long supplierId) { this.supplierId = supplierId; }
+    public String getSupplierName() { return supplierName; }
+    public void setSupplierName(String supplierName) { this.supplierName = supplierName; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }

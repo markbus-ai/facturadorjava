@@ -78,6 +78,20 @@ public class ClientDAO {
         }
     }
 
+    public boolean hasInvoices(Long clientId) {
+        String sql = "SELECT COUNT(*) FROM invoices WHERE client_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, clientId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al verificar facturas del cliente ID: " + clientId, e);
+        }
+        return false;
+    }
+
     private Client mapRow(ResultSet rs) throws SQLException {
         Client c = new Client();
         c.setId(rs.getLong("id"));

@@ -43,10 +43,11 @@
                 <TableView fx:id="productTable" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colProdCode" text="Codigo" prefWidth="100"/>
-                        <TableColumn fx:id="colProdName" text="Nombre" prefWidth="220"/>
+                        <TableColumn fx:id="colProdName" text="Nombre" prefWidth="200"/>
                         <TableColumn fx:id="colProdPrice" text="Precio" prefWidth="100"/>
                         <TableColumn fx:id="colProdStock" text="Stock" prefWidth="80"/>
                         <TableColumn fx:id="colProdMinStock" text="Stock Min." prefWidth="80"/>
+                        <TableColumn fx:id="colProdSupplier" text="Proveedor" prefWidth="150"/>
                     </columns>
                 </TableView>
                 <HBox spacing="8">
@@ -73,6 +74,29 @@
                     <Button text="Agregar" onAction="#handleAddClient" styleClass="button-primary"/>
                     <Button text="Editar" onAction="#handleEditClient"/>
                     <Button text="Eliminar" onAction="#handleDeleteClient" styleClass="button-danger"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Actualizar" onAction="#handleRefresh"/>
+                </HBox>
+            </VBox>
+        </Tab>
+
+        <!-- Proveedores -->
+        <Tab text="Proveedores">
+            <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                <TableView fx:id="supplierTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colSupName" text="Nombre" prefWidth="180"/>
+                        <TableColumn fx:id="colSupContact" text="Contacto" prefWidth="150"/>
+                        <TableColumn fx:id="colSupPhone" text="Telefono" prefWidth="120"/>
+                        <TableColumn fx:id="colSupEmail" text="Email" prefWidth="150"/>
+                        <TableColumn fx:id="colSupAddress" text="Direccion" prefWidth="180"/>
+                        <TableColumn fx:id="colSupCuit" text="CUIT" prefWidth="100"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8">
+                    <Button text="Agregar" onAction="#handleAddSupplier" styleClass="button-primary"/>
+                    <Button text="Editar" onAction="#handleEditSupplier"/>
+                    <Button text="Eliminar" onAction="#handleDeleteSupplier" styleClass="button-danger"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button text="Actualizar" onAction="#handleRefresh"/>
                 </HBox>

@@ -14,14 +14,17 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import com.sfi.util.UIUtils;
+
 import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.scene.input.KeyCode;
 
 public class VentasController implements Initializable {
 
     @FXML private Label userLabel;
-    @FXML private Button adminButton;
+    @FXML private Button backButton;
     @FXML private ComboBox<Product> productCombo;
     @FXML private TextField quantityField;
     @FXML private ComboBox<Client> clientCombo;
@@ -57,7 +60,36 @@ public class VentasController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         userLabel.setText("Usuario: " + authService.getCurrentUser().getUsername());
-        adminButton.setVisible(authService.isAdmin());
+        if (authService.isAdmin()) {
+            backButton.setText("Admin");
+        } else {
+            backButton.setText("Mis Facturas");
+        }
+
+        UIUtils.setMaxLength(quantityField, 9);
+        UIUtils.setMaxLength(discountValueField, 10);
+        UIUtils.setMaxLength(itemDiscountValueField, 10);
+
+        // Enter en quantityField → agregar ítem (comportamiento esperado)
+        quantityField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                e.consume(); // evita que se propague a otros botones
+                handleAddItem();
+            }
+        });
+        // Enter en campos de descuento → aplicar descuento, NO agregar ítem
+        discountValueField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                e.consume();
+                handleApplyDiscount();
+            }
+        });
+        itemDiscountValueField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                e.consume();
+                handleApplyItemDiscount();
+            }
+        });
 
         // Client combo
         clientCombo.setItems(FXCollections.observableArrayList(clientService.findAll()));
@@ -124,11 +156,26 @@ public class VentasController implements Initializable {
         // Global discount
         discountTypeCombo.setItems(FXCollections.observableArrayList("Sin Descuento", "Porcentual (%)", "Nominal ($)"));
         discountTypeCombo.getSelectionModel().selectFirst();
+        discountValueField.setDisable(true);
+        discountTypeCombo.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
+            boolean hasDiscount = newVal.intValue() > 0;
+            discountValueField.setDisable(!hasDiscount);
+            if (!hasDiscount) {
+                discountValueField.clear();
+                currentDiscount = new SinDescuento();
+                recalcSummary();
+            }
+        });
 
         // Per-item discount
         itemDiscountTypeCombo.setItems(FXCollections.observableArrayList("Sin Descuento", "Porcentual (%)", "Nominal ($)"));
         itemDiscountTypeCombo.getSelectionModel().selectFirst();
         itemDiscountValueField.setDisable(true);
+        itemDiscountTypeCombo.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
+            boolean hasDiscount = newVal.intValue() > 0;
+            itemDiscountValueField.setDisable(!hasDiscount);
+            if (!hasDiscount) itemDiscountValueField.clear();
+        });
 
         recalcSummary();
     }
@@ -147,8 +194,12 @@ public class VentasController implements Initializable {
             return;
         }
 
-        if (qty > product.getStock()) {
-            showAlert("Stock insuficiente (disponible: " + product.getStock() + ")");
+        int existingQty = itemsData.stream()
+                .filter(item -> item.getProductId().equals(product.getId()))
+                .mapToInt(InvoiceItem::getQuantity)
+                .sum();
+        if (existingQty + qty > product.getStock()) {
+            showAlert("Stock insuficiente. Disponible: " + product.getStock() + " (Ya tienes " + existingQty + " en el carrito)");
             return;
         }
 
@@ -157,16 +208,24 @@ public class VentasController implements Initializable {
         // Apply per-item discount if set
         int discIdx = itemDiscountTypeCombo.getSelectionModel().getSelectedIndex();
         if (discIdx > 0) {
+            String discText = itemDiscountValueField.getText().trim();
             try {
-                double val = Double.parseDouble(itemDiscountValueField.getText().trim());
-                if (discIdx == 1) {
-                    item.setDiscountType(DiscountType.PERCENTAGE);
-                    item.setDiscountValue(BigDecimal.valueOf(val));
-                } else if (discIdx == 2) {
-                    item.setDiscountType(DiscountType.NOMINAL);
-                    item.setDiscountValue(BigDecimal.valueOf(val));
+                BigDecimal val = new BigDecimal(discText);
+                if (val.compareTo(BigDecimal.ZERO) < 0) {
+                    showAlert("El descuento no puede ser negativo");
+                    return;
                 }
-            } catch (NumberFormatException ignored) {}
+                if (discIdx == 1 && val.compareTo(new BigDecimal("100")) > 0) {
+                    showAlert("El porcentaje de descuento no puede superar el 100%");
+                    return;
+                }
+
+                item.setDiscountType(discIdx == 1 ? DiscountType.PERCENTAGE : DiscountType.NOMINAL);
+                item.setDiscountValue(val);
+            } catch (NumberFormatException e) {
+                showAlert("Valor de descuento del ítem inválido");
+                return;
+            }
         }
 
         itemsData.add(item);
@@ -187,16 +246,20 @@ public class VentasController implements Initializable {
             sel.setDiscountValue(BigDecimal.ZERO);
         } else {
             try {
-                double val = Double.parseDouble(valText);
-                if (idx == 1) {
-                    sel.setDiscountType(DiscountType.PERCENTAGE);
-                    sel.setDiscountValue(BigDecimal.valueOf(val));
-                } else if (idx == 2) {
-                    sel.setDiscountType(DiscountType.NOMINAL);
-                    sel.setDiscountValue(BigDecimal.valueOf(val));
+                BigDecimal val = new BigDecimal(valText);
+                if (val.compareTo(BigDecimal.ZERO) < 0) {
+                    showAlert("El descuento no puede ser negativo");
+                    return;
                 }
+                if (idx == 1 && val.compareTo(new BigDecimal("100")) > 0) {
+                    showAlert("El porcentaje de descuento no puede superar el 100%");
+                    return;
+                }
+                
+                sel.setDiscountType(idx == 1 ? DiscountType.PERCENTAGE : DiscountType.NOMINAL);
+                sel.setDiscountValue(val);
             } catch (NumberFormatException e) {
-                showAlert("Valor de descuento invalido");
+                showAlert("Valor de descuento inválido");
                 return;
             }
         }
@@ -210,15 +273,30 @@ public class VentasController implements Initializable {
         int idx = discountTypeCombo.getSelectionModel().getSelectedIndex();
         String valText = discountValueField.getText().trim();
 
-        try {
-            currentDiscount = switch (idx) {
-                case 1 -> new DescuentoPorcentual(Double.parseDouble(valText));
-                case 2 -> new DescuentoNominal(Double.parseDouble(valText));
-                default -> new SinDescuento();
-            };
-        } catch (Exception e) {
-            showAlert("Valor de descuento invalido");
+        if (idx == 0) {
             currentDiscount = new SinDescuento();
+        } else {
+            try {
+                BigDecimal val = new BigDecimal(valText);
+                if (val.compareTo(BigDecimal.ZERO) < 0) {
+                    showAlert("El descuento no puede ser negativo");
+                    return;
+                }
+                if (idx == 1 && val.compareTo(new BigDecimal("100")) > 0) {
+                    showAlert("El porcentaje de descuento no puede superar el 100%");
+                    return;
+                }
+                
+                currentDiscount = switch (idx) {
+                    case 1 -> new DescuentoPorcentual(val);
+                    case 2 -> new DescuentoNominal(val);
+                    default -> new SinDescuento();
+                };
+            } catch (NumberFormatException e) {
+                showAlert("Valor de descuento inválido");
+                currentDiscount = new SinDescuento();
+                return;
+            }
         }
 
         recalcSummary();
@@ -251,16 +329,24 @@ public class VentasController implements Initializable {
             currentDiscount = new SinDescuento();
             discountTypeCombo.getSelectionModel().selectFirst();
             discountValueField.clear();
+            itemDiscountTypeCombo.getSelectionModel().selectFirst();
+            itemDiscountValueField.clear();
+            itemDiscountValueField.setDisable(true);
             recalcSummary();
             productCombo.setItems(FXCollections.observableArrayList(productService.findAllActive()));
+            quantityField.clear();
         } catch (Exception e) {
             showAlert("Error: " + e.getMessage());
         }
     }
 
     @FXML
-    public void handleGoToAdmin() {
-        App.loadAdminScene();
+    public void handleGoBack() {
+        if (authService.isAdmin()) {
+            App.loadAdminScene();
+        } else {
+            App.loadUserInvoicesScene();
+        }
     }
 
     @FXML
@@ -286,38 +372,13 @@ public class VentasController implements Initializable {
     }
 
     private void recalcSummary() {
-        BigDecimal subtotal = BigDecimal.ZERO;
-        BigDecimal totalItemDiscount = BigDecimal.ZERO;
-
-        for (InvoiceItem item : itemsData) {
-            BigDecimal lineTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            subtotal = subtotal.add(lineTotal);
-
-            BigDecimal lineDiscount = BigDecimal.ZERO;
-            if (item.getDiscountType() == DiscountType.PERCENTAGE) {
-                lineDiscount = lineTotal.multiply(item.getDiscountValue())
-                    .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
-            } else if (item.getDiscountType() == DiscountType.NOMINAL) {
-                lineDiscount = item.getDiscountValue().min(lineTotal);
-            }
-
-            BigDecimal finalLine = lineTotal.subtract(lineDiscount);
-            item.setSubtotal(finalLine);
-            totalItemDiscount = totalItemDiscount.add(lineDiscount);
-        }
-
-        BigDecimal afterItems = subtotal.subtract(totalItemDiscount);
-        BigDecimal globalDiscAmt = currentDiscount.calculate(afterItems);
-        BigDecimal taxable = afterItems.subtract(globalDiscAmt);
-        BigDecimal taxAmt = taxable.multiply(new BigDecimal("0.21")).setScale(2, java.math.RoundingMode.HALF_UP);
-        BigDecimal total = taxable.add(taxAmt);
-        BigDecimal totalDisc = totalItemDiscount.add(globalDiscAmt);
-
-        subtotalLabel.setText("$" + String.format("%.2f", subtotal));
-        discountLabel.setText("$" + String.format("%.2f", totalDisc));
-        taxableLabel.setText("$" + String.format("%.2f", taxable));
-        taxLabel.setText("$" + String.format("%.2f", taxAmt));
-        totalLabel.setText("$" + String.format("%.2f", total));
+        InvoiceCalculator.CalculationResult res = InvoiceCalculator.calculateInvoice(itemsData, currentDiscount, new BigDecimal("21.00"));
+        
+        subtotalLabel.setText("$" + String.format("%.2f", res.rawSubtotal));
+        discountLabel.setText("$" + String.format("%.2f", res.totalDiscount));
+        taxableLabel.setText("$" + String.format("%.2f", res.taxableAmount));
+        taxLabel.setText("$" + String.format("%.2f", res.taxAmount));
+        totalLabel.setText("$" + String.format("%.2f", res.total));
     }
 
     private void showAlert(String msg) {

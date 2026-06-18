@@ -1,5 +1,6 @@
 package com.sfi.service;
 
+import com.sfi.dao.ClientDAO;
 import com.sfi.dao.InvoiceDAO;
 import com.sfi.dao.ProductDAO;
 import com.sfi.model.*;
@@ -12,39 +13,54 @@ import java.util.List;
 public class InvoiceService {
     private final InvoiceDAO invoiceDAO;
     private final ProductDAO productDAO;
+    private final ClientDAO clientDAO;
 
     public InvoiceService() {
         this.invoiceDAO = new InvoiceDAO();
         this.productDAO = new ProductDAO();
+        this.clientDAO = new ClientDAO();
     }
 
     public Invoice emitirFactura(Long userId, Long clientId, List<InvoiceItem> items, DescuentoStrategy descuento) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("La factura debe tener al menos un ítem.");
+        }
+        if (clientId != null) {
+            clientDAO.findById(clientId)
+                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado ID: " + clientId));
+        }
+
         Invoice invoice = new Invoice();
         invoice.setUserId(userId);
         invoice.setClientId(clientId);
-        invoice.setInvoiceNumber(generarNumeroFactura());
+        
+        String number;
+        int retries = 0;
+        do {
+            number = generarNumeroFactura();
+            retries++;
+            if (retries > 10) {
+                throw new IllegalStateException("No se pudo generar un número de factura único.");
+            }
+        } while (invoiceDAO.existsInvoiceNumber(number));
+        invoice.setInvoiceNumber(number);
 
         for (InvoiceItem item : items) {
             Product product = productDAO.findById(item.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado ID: " + item.getProductId()));
+            if (!product.isActive()) {
+                throw new IllegalArgumentException("El producto '" + product.getName() + "' está inactivo y no se puede facturar.");
+            }
             if (product.getStock() < item.getQuantity()) {
                 throw new IllegalStateException("Stock insuficiente para: " + product.getName()
                         + " (disponible: " + product.getStock() + ", solicitado: " + item.getQuantity() + ")");
             }
             item.setUnitPrice(product.getPrice());
-            BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            if (item.getDiscountType() == DiscountType.PERCENTAGE) {
-                BigDecimal disc = lineTotal.multiply(item.getDiscountValue()).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
-                item.setSubtotal(lineTotal.subtract(disc));
-            } else if (item.getDiscountType() == DiscountType.NOMINAL) {
-                BigDecimal disc = item.getDiscountValue().min(lineTotal);
-                item.setSubtotal(lineTotal.subtract(disc));
-            } else {
-                item.setSubtotal(lineTotal);
-            }
-
             item.setProductName(product.getName());
+            
+            BigDecimal subtotal = InvoiceCalculator.calculateItemSubtotal(item);
+            item.setSubtotal(subtotal);
+            
             invoice.addItem(item);
         }
 

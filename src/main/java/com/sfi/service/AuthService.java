@@ -15,11 +15,28 @@ public class AuthService {
         this.userDAO = new UserDAO();
     }
 
+    public static String hashPassword(String password) {
+        try {
+            String salted = password + "sfi_salt_2026";
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(salted.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException("Error hashing password", ex);
+        }
+    }
+
     public boolean login(String username, String password) {
         Optional<User> userOpt = userDAO.findByUsername(username);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (user.isActive() && password.equals(user.getPassword())) {
+            if (user.isActive() && hashPassword(password).equals(user.getPassword())) {
                 this.currentUser = user;
                 return true;
             }
@@ -59,14 +76,21 @@ public class AuthService {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("El usuario no puede estar vacio");
         }
+        String trimmedUsername = username.trim();
+        if (trimmedUsername.length() < 3) {
+            throw new IllegalArgumentException("El nombre de usuario debe tener al menos 3 caracteres");
+        }
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("La contrasena no puede estar vacia");
+        }
+        if (password.length() < 4) {
+            throw new IllegalArgumentException("La contrasena debe tener al menos 4 caracteres");
         }
         if (!password.equals(confirmPassword)) {
             throw new IllegalArgumentException("Las contrasenas no coinciden");
         }
 
-        if (userDAO.findByUsername(username.trim()).isPresent()) {
+        if (userDAO.findByUsername(trimmedUsername).isPresent()) {
             throw new IllegalArgumentException("El usuario ya existe");
         }
 
@@ -78,8 +102,8 @@ public class AuthService {
         }
 
         User user = new User();
-        user.setUsername(username.trim());
-        user.setPassword(password);
+        user.setUsername(trimmedUsername);
+        user.setPassword(hashPassword(password));
         user.setRole(role);
         user.setActive(true);
         userDAO.save(user);
@@ -100,6 +124,13 @@ public class AuthService {
         }
 
         User user = userOpt.get();
+        if (user.getRole() == Role.ADMIN && newRole != Role.ADMIN) {
+            long adminCount = countByRole(Role.ADMIN);
+            if (adminCount <= 1) {
+                throw new IllegalArgumentException("No puedes cambiar el rol del único administrador del sistema");
+            }
+        }
+
         user.setRole(newRole);
         userDAO.update(user);
         return true;

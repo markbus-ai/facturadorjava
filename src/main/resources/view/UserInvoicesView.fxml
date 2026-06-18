@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="8" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sfi.controller.UserInvoicesController"
+      prefWidth="900" prefHeight="600"
+      style="-fx-padding: 16;">
+
+    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-bar">
+        <Label text="Mis Facturas" styleClass="label-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="userLabel" style="-fx-font-size: 13px; -fx-text-fill: #86868b;"/>
+        <Button text="Nueva Factura" onAction="#handleNuevaFactura" styleClass="button-primary"/>
+        <Button text="Salir" onAction="#handleLogout" styleClass="button-text"/>
+    </HBox>
+
+    <Separator/>
+
+    <TableView fx:id="invoiceTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colInvNumber" text="Factura #" prefWidth="200"/>
+            <TableColumn fx:id="colInvClient" text="Cliente" prefWidth="220"/>
+            <TableColumn fx:id="colInvDate" text="Fecha" prefWidth="150"/>
+            <TableColumn fx:id="colInvTotal" text="Total" prefWidth="120"/>
+        </columns>
+    </TableView>
+</VBox>
