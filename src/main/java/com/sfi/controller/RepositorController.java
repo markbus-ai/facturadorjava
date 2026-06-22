@@ -95,10 +95,11 @@ public class RepositorController implements Initializable {
             sel.setStock(newStock);
             productService.update(sel);
             refreshAll();
-            // Re-read updated product to check against current minStock from DB
-            if (newStock < sel.getMinStock()) {
-                showAlert("Advertencia: El stock actual (" + newStock + ") es inferior al stock mínimo (" + sel.getMinStock() + ")");
-            }
+            productService.findById(sel.getId()).ifPresent(fresh -> {
+                if (newStock < fresh.getMinStock()) {
+                    showAlert("Advertencia: El stock actual (" + newStock + ") es inferior al stock mínimo (" + fresh.getMinStock() + ")");
+                }
+            });
         } catch (Exception e) {
             showAlert("Error: " + e.getMessage());
         }

@@ -29,7 +29,7 @@ public class Invoice {
         this.discountType = DiscountType.NONE;
         this.discountValue = BigDecimal.ZERO;
         this.discountAmount = BigDecimal.ZERO;
-        this.taxRate = new BigDecimal("21.00");
+        this.taxRate = InvoiceCalculator.TAX_RATE;
     }
 
     public Invoice(Long userId, String invoiceNumber) {
@@ -40,13 +40,6 @@ public class Invoice {
 
     public void addItem(InvoiceItem item) {
         this.items.add(item);
-        recalcSubtotal();
-    }
-
-    private void recalcSubtotal() {
-        this.subtotal = items.stream()
-                .map(InvoiceItem::getSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public void applyDiscount(DescuentoStrategy strategy) {

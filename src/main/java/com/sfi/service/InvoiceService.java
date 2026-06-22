@@ -22,6 +22,9 @@ public class InvoiceService {
     }
 
     public Invoice emitirFactura(Long userId, Long clientId, List<InvoiceItem> items, DescuentoStrategy descuento) {
+        if (userId == null) {
+            throw new IllegalArgumentException("El ID del usuario es obligatorio");
+        }
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("La factura debe tener al menos un ítem.");
         }
@@ -46,8 +49,17 @@ public class InvoiceService {
         invoice.setInvoiceNumber(number);
 
         for (InvoiceItem item : items) {
+            if (item.getProductId() == null) {
+                throw new IllegalArgumentException("El ID del producto es obligatorio");
+            }
+            if (item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("La cantidad debe ser mayor a cero");
+            }
             Product product = productDAO.findById(item.getProductId())
                     .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado ID: " + item.getProductId()));
+            if (product.getPrice() == null) {
+                throw new IllegalArgumentException("El producto '" + product.getName() + "' no tiene precio asignado");
+            }
             if (!product.isActive()) {
                 throw new IllegalArgumentException("El producto '" + product.getName() + "' está inactivo y no se puede facturar.");
             }
@@ -64,6 +76,9 @@ public class InvoiceService {
             invoice.addItem(item);
         }
 
+        if (descuento == null) {
+            throw new IllegalArgumentException("La estrategia de descuento es obligatoria");
+        }
         invoice.applyDiscount(descuento);
         return invoiceDAO.save(invoice);
     }

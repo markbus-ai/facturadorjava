@@ -31,6 +31,9 @@ public class ClientService {
             throw new IllegalArgumentException("El nombre del cliente es obligatorio");
         }
         client.setName(client.getName().trim());
+        if (client.getName().length() < 2) {
+            throw new IllegalArgumentException("El nombre debe tener al menos 2 caracteres");
+        }
         if (client.getName().length() > 150) {
             throw new IllegalArgumentException("El nombre del cliente no puede superar los 150 caracteres");
         }
@@ -42,13 +45,27 @@ public class ClientService {
         }
         if (client.getPhone() != null) {
             client.setPhone(client.getPhone().trim());
-            if (client.getPhone().length() > 50) {
-                throw new IllegalArgumentException("El teléfono del cliente no puede superar los 50 caracteres");
+            if (!client.getPhone().isEmpty()) {
+                if (!client.getPhone().matches("[0-9\\+\\-\\s]+")) {
+                    throw new IllegalArgumentException("El teléfono contiene caracteres inválidos");
+                }
+                if (client.getPhone().length() > 50) {
+                    throw new IllegalArgumentException("El teléfono del cliente no puede superar los 50 caracteres");
+                }
             }
+        }
+        if (client.getId() != null && client.getId() <= 0) {
+            throw new IllegalArgumentException("ID de cliente inválido");
         }
     }
 
     public void delete(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El ID del cliente es obligatorio");
+        }
+        if (!clientDAO.findById(id).isPresent()) {
+            throw new IllegalArgumentException("El cliente no existe");
+        }
         if (clientDAO.hasInvoices(id)) {
             throw new IllegalArgumentException("No se puede eliminar el cliente porque tiene facturas asociadas.");
         }

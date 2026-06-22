@@ -64,6 +64,19 @@ public class ProductDAO {
         return products;
     }
 
+    public List<Product> findAllActiveWithStock() {
+        List<Product> products = new ArrayList<>();
+        String sql = "SELECT p.*, s.name as supplier_name FROM products p LEFT JOIN suppliers s ON p.supplier_id = s.id WHERE p.active = TRUE AND p.stock > 0 ORDER BY p.name";
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) products.add(mapRow(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al listar productos activos con stock", e);
+        }
+        return products;
+    }
+
     public List<Product> findLowStock() {
         List<Product> products = new ArrayList<>();
         String sql = "SELECT p.*, s.name as supplier_name FROM products p LEFT JOIN suppliers s ON p.supplier_id = s.id WHERE p.active = TRUE AND p.stock < p.min_stock ORDER BY p.name";

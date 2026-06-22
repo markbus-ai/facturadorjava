@@ -101,9 +101,9 @@ CREATE TABLE IF NOT EXISTS invoice_items (
 -- USUARIOS POR DEFECTO
 -- ============================================================
 INSERT INTO users (username, password, role) VALUES
-('admin', 'ae6819454d0b069fdadafc733b751bc22fb3fe941892c79f143f1d23a9642c91', 'ADMIN'),
-('user',  '8f342c057682295211d19f2e337924e136779f9861a23afd8ce0406053610974',  'USER'),
-('repositor', 'f21cfa6e2f955baf2ebec163d6353c56819b4c6b479f4e4e827f0b876542cd2d', 'REPOSITOR');
+('admin', 'admin123', 'ADMIN'),
+('user',  'user123',  'USER'),
+('repositor', 'repositor123', 'REPOSITOR');
 
 -- ============================================================
 -- CLIENTE POR DEFECTO

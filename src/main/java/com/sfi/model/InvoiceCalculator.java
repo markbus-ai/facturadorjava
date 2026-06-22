@@ -6,6 +6,8 @@ import java.util.List;
 
 public class InvoiceCalculator {
 
+    public static final BigDecimal TAX_RATE = new BigDecimal("21.00");
+
     public static class CalculationResult {
         public final BigDecimal rawSubtotal;       // Sum of qty * unitPrice
         public final BigDecimal totalItemDiscount; // Sum of item discounts
@@ -32,12 +34,11 @@ public class InvoiceCalculator {
 
     public static BigDecimal calculateItemSubtotal(InvoiceItem item) {
         BigDecimal lineTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-        BigDecimal lineDiscount = calculateItemDiscount(item);
+        BigDecimal lineDiscount = calculateItemDiscount(item, lineTotal);
         return lineTotal.subtract(lineDiscount);
     }
 
-    public static BigDecimal calculateItemDiscount(InvoiceItem item) {
-        BigDecimal lineTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+    public static BigDecimal calculateItemDiscount(InvoiceItem item, BigDecimal lineTotal) {
         DiscountType dtype = item.getDiscountType();
         BigDecimal dvalue = item.getDiscountValue();
         if (dtype == null || dvalue == null || dtype == DiscountType.NONE) {
@@ -60,7 +61,7 @@ public class InvoiceCalculator {
             BigDecimal lineTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             rawSubtotal = rawSubtotal.add(lineTotal);
 
-            BigDecimal lineDiscount = calculateItemDiscount(item);
+            BigDecimal lineDiscount = calculateItemDiscount(item, lineTotal);
             totalItemDiscount = totalItemDiscount.add(lineDiscount);
             
             item.setSubtotal(lineTotal.subtract(lineDiscount));

@@ -12,7 +12,7 @@
         <Label text="Ventas"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="userLabel" style="-fx-font-size: 13px; -fx-text-fill: #86868b;"/>
-        <Button fx:id="backButton" text="Volver" onAction="#handleGoBack"
+        <Button fx:id="backButton" text="&#8592; Panel Admin" onAction="#handleGoBack"
                 styleClass="button-text"/>
         <Button text="Salir" onAction="#handleLogout" styleClass="button-text"/>
     </HBox>

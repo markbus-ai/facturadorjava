@@ -32,6 +32,12 @@ public class SupplierService {
     }
 
     public void delete(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El ID del proveedor es obligatorio");
+        }
+        if (!supplierDAO.findById(id).isPresent()) {
+            throw new IllegalArgumentException("El proveedor no existe");
+        }
         if (supplierDAO.hasProducts(id)) {
             throw new IllegalArgumentException("No se puede eliminar el proveedor porque tiene productos asociados.");
         }
@@ -43,6 +49,9 @@ public class SupplierService {
             throw new IllegalArgumentException("El nombre del proveedor es obligatorio.");
         }
         supplier.setName(supplier.getName().trim());
+        if (supplier.getName().length() < 2) {
+            throw new IllegalArgumentException("El nombre debe tener al menos 2 caracteres.");
+        }
         if (supplier.getName().length() > 150) {
             throw new IllegalArgumentException("El nombre del proveedor no puede superar los 150 caracteres.");
         }
@@ -55,6 +64,12 @@ public class SupplierService {
         if (supplier.getPhone() != null) {
             supplier.setPhone(supplier.getPhone().trim());
             if (!supplier.getPhone().isEmpty()) {
+                if (!supplier.getPhone().matches("[0-9\\+\\-\\s]+")) {
+                    throw new IllegalArgumentException("El teléfono contiene caracteres inválidos");
+                }
+                if (supplier.getPhone().length() > 50) {
+                    throw new IllegalArgumentException("El teléfono no puede superar los 50 caracteres");
+                }
                 String cleanPhone = supplier.getPhone().replaceAll("\\D", "");
                 if (cleanPhone.length() < 7) {
                     throw new IllegalArgumentException("El teléfono debe tener al menos 7 dígitos.");
@@ -64,7 +79,7 @@ public class SupplierService {
         if (supplier.getEmail() != null) {
             supplier.setEmail(supplier.getEmail().trim());
             if (!supplier.getEmail().isEmpty()) {
-                if (!supplier.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                if (!supplier.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9]+(\\.[A-Za-z0-9]+)+$")) {
                     throw new IllegalArgumentException("El correo electrónico no es válido.");
                 }
             }

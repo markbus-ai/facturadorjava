@@ -10,4 +10,27 @@ public class UIUtils {
             }
         });
     }
+
+    /**
+     * Restringe el campo a solo dígitos (para campos de cantidad, stock, etc.)
+     */
+    public static void setNumericOnly(TextField textField) {
+        textField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.matches("\\d*")) {
+                textField.setText(oldVal != null ? oldVal : "");
+            }
+        });
+    }
+
+    /**
+     * Restringe el campo a formato decimal (dígitos y un solo punto decimal,
+     * para campos de precio, descuento, etc.)
+     */
+    public static void setDecimalOnly(TextField textField) {
+        textField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.matches("\\d*\\.?\\d*")) {
+                textField.setText(oldVal != null ? oldVal : "");
+            }
+        });
+    }
 }

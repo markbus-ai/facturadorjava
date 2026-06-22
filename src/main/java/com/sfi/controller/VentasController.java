@@ -61,9 +61,9 @@ public class VentasController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         userLabel.setText("Usuario: " + authService.getCurrentUser().getUsername());
         if (authService.isAdmin()) {
-            backButton.setText("Admin");
+            backButton.setText("\u2190 Panel Admin");
         } else {
-            backButton.setText("Mis Facturas");
+            backButton.setText("\u2190 Mis Facturas");
         }
 
         UIUtils.setMaxLength(quantityField, 9);
@@ -113,7 +113,7 @@ public class VentasController implements Initializable {
         }
 
         // Product combo
-        productCombo.setItems(FXCollections.observableArrayList(productService.findAllActive()));
+        productCombo.setItems(FXCollections.observableArrayList(productService.findAllActiveWithStock()));
         productCombo.setCellFactory(l -> new ListCell<>() {
             @Override
             protected void updateItem(Product p, boolean empty) {
@@ -194,9 +194,9 @@ public class VentasController implements Initializable {
             return;
         }
 
-        int existingQty = itemsData.stream()
+        long existingQty = itemsData.stream()
                 .filter(item -> item.getProductId().equals(product.getId()))
-                .mapToInt(InvoiceItem::getQuantity)
+                .mapToLong(InvoiceItem::getQuantity)
                 .sum();
         if (existingQty + qty > product.getStock()) {
             showAlert("Stock insuficiente. Disponible: " + product.getStock() + " (Ya tienes " + existingQty + " en el carrito)");
@@ -209,6 +209,10 @@ public class VentasController implements Initializable {
         int discIdx = itemDiscountTypeCombo.getSelectionModel().getSelectedIndex();
         if (discIdx > 0) {
             String discText = itemDiscountValueField.getText().trim();
+            if (discText.isEmpty()) {
+                showAlert("Ingrese un valor de descuento");
+                return;
+            }
             try {
                 BigDecimal val = new BigDecimal(discText);
                 if (val.compareTo(BigDecimal.ZERO) < 0) {
@@ -224,6 +228,9 @@ public class VentasController implements Initializable {
                 item.setDiscountValue(val);
             } catch (NumberFormatException e) {
                 showAlert("Valor de descuento del ítem inválido");
+                itemDiscountValueField.clear();
+                itemDiscountTypeCombo.getSelectionModel().selectFirst();
+                itemDiscountValueField.setDisable(true);
                 return;
             }
         }
@@ -231,6 +238,9 @@ public class VentasController implements Initializable {
         itemsData.add(item);
         recalcSummary();
         quantityField.clear();
+        itemDiscountTypeCombo.getSelectionModel().selectFirst();
+        itemDiscountValueField.clear();
+        itemDiscountValueField.setDisable(true);
     }
 
     @FXML
@@ -245,6 +255,10 @@ public class VentasController implements Initializable {
             sel.setDiscountType(DiscountType.NONE);
             sel.setDiscountValue(BigDecimal.ZERO);
         } else {
+            if (valText.isEmpty()) {
+                showAlert("Ingrese un valor de descuento");
+                return;
+            }
             try {
                 BigDecimal val = new BigDecimal(valText);
                 if (val.compareTo(BigDecimal.ZERO) < 0) {
@@ -260,6 +274,9 @@ public class VentasController implements Initializable {
                 sel.setDiscountValue(val);
             } catch (NumberFormatException e) {
                 showAlert("Valor de descuento inválido");
+                itemDiscountValueField.clear();
+                itemDiscountTypeCombo.getSelectionModel().selectFirst();
+                itemDiscountValueField.setDisable(true);
                 return;
             }
         }
@@ -276,6 +293,10 @@ public class VentasController implements Initializable {
         if (idx == 0) {
             currentDiscount = new SinDescuento();
         } else {
+            if (valText.isEmpty()) {
+                showAlert("Ingrese un valor de descuento");
+                return;
+            }
             try {
                 BigDecimal val = new BigDecimal(valText);
                 if (val.compareTo(BigDecimal.ZERO) < 0) {
@@ -294,6 +315,8 @@ public class VentasController implements Initializable {
                 };
             } catch (NumberFormatException e) {
                 showAlert("Valor de descuento inválido");
+                discountValueField.clear();
+                discountTypeCombo.getSelectionModel().selectFirst();
                 currentDiscount = new SinDescuento();
                 return;
             }
@@ -311,6 +334,11 @@ public class VentasController implements Initializable {
 
         Client client = clientCombo.getSelectionModel().getSelectedItem();
         Long clientId = client != null ? client.getId() : null;
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Emitir factura por $" + totalLabel.getText().replace("$", "") + "?",
+                ButtonType.YES, ButtonType.NO);
+        if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
 
         try {
             Invoice invoice = invoiceService.emitirFactura(
@@ -333,7 +361,8 @@ public class VentasController implements Initializable {
             itemDiscountValueField.clear();
             itemDiscountValueField.setDisable(true);
             recalcSummary();
-            productCombo.setItems(FXCollections.observableArrayList(productService.findAllActive()));
+            productCombo.setItems(FXCollections.observableArrayList(productService.findAllActiveWithStock()));
+            productCombo.getSelectionModel().clearSelection();
             quantityField.clear();
         } catch (Exception e) {
             showAlert("Error: " + e.getMessage());
@@ -372,7 +401,7 @@ public class VentasController implements Initializable {
     }
 
     private void recalcSummary() {
-        InvoiceCalculator.CalculationResult res = InvoiceCalculator.calculateInvoice(itemsData, currentDiscount, new BigDecimal("21.00"));
+        InvoiceCalculator.CalculationResult res = InvoiceCalculator.calculateInvoice(itemsData, currentDiscount, InvoiceCalculator.TAX_RATE);
         
         subtotalLabel.setText("$" + String.format("%.2f", res.rawSubtotal));
         discountLabel.setText("$" + String.format("%.2f", res.totalDiscount));

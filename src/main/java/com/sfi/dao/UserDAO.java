@@ -45,17 +45,37 @@ public class UserDAO {
 
     public List<User> findAll() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT id, username, password, role, active FROM users ORDER BY username";
+        String sql = "SELECT id, username, role, active FROM users ORDER BY username";
         try (Connection conn = DatabaseConfig.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                users.add(mapRow(rs));
+                User user = new User();
+                user.setId(rs.getLong("id"));
+                user.setUsername(rs.getString("username"));
+                user.setPassword("");
+                user.setRole(Role.valueOf(rs.getString("role")));
+                user.setActive(rs.getBoolean("active"));
+                users.add(user);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error al listar usuarios", e);
         }
         return users;
+    }
+
+    public long countAllByRole(Role role) {
+        String sql = "SELECT COUNT(*) FROM users WHERE role = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, role.name());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al contar usuarios por rol", e);
+        }
+        return 0;
     }
 
     public long countByRole(Role role) {

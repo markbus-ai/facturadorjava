@@ -5,6 +5,7 @@ import com.sfi.model.Product;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public class ProductService {
     private final ProductDAO productDAO;
@@ -13,12 +14,20 @@ public class ProductService {
         this.productDAO = new ProductDAO();
     }
 
+    public Optional<Product> findById(Long id) {
+        return productDAO.findById(id);
+    }
+
     public List<Product> findAll() {
         return productDAO.findAll();
     }
 
     public List<Product> findAllActive() {
         return productDAO.findAllActive();
+    }
+
+    public List<Product> findAllActiveWithStock() {
+        return productDAO.findAllActiveWithStock();
     }
 
     public List<Product> findLowStock() {
@@ -34,6 +43,9 @@ public class ProductService {
     }
 
     public void update(Product product) {
+        if (product.getId() == null) {
+            throw new IllegalArgumentException("El ID del producto es obligatorio para actualizar");
+        }
         validateProduct(product);
         productDAO.findByCode(product.getCode()).ifPresent(existing -> {
             if (!existing.getId().equals(product.getId())) {
@@ -47,7 +59,10 @@ public class ProductService {
         if (product.getCode() == null || product.getCode().isBlank()) {
             throw new IllegalArgumentException("El codigo del producto es obligatorio");
         }
-        product.setCode(product.getCode().trim());
+        product.setCode(product.getCode().trim().toUpperCase());
+        if (!product.getCode().matches("^[A-Za-z0-9\\-]+$")) {
+            throw new IllegalArgumentException("El codigo solo puede contener letras, numeros y guiones");
+        }
         if (product.getCode().length() > 20) {
             throw new IllegalArgumentException("El código del producto no puede superar los 20 caracteres");
         }
@@ -60,19 +75,40 @@ public class ProductService {
         }
         if (product.getDescription() != null) {
             product.setDescription(product.getDescription().trim());
+            if (product.getDescription().length() > 2000) {
+                throw new IllegalArgumentException("La descripcion no puede superar los 2000 caracteres");
+            }
         }
         if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
+        if (product.getPrice().scale() > 2) {
+            throw new IllegalArgumentException("El precio no puede tener mas de 2 decimales");
+        }
+        if (product.getPrice().compareTo(new BigDecimal("99999999999.99")) > 0) {
+            throw new IllegalArgumentException("El precio no puede superar los 99,999,999,999.99");
+        }
         if (product.getStock() < 0) {
             throw new IllegalArgumentException("El stock no puede ser negativo");
+        }
+        if (product.getStock() > 999_999_999) {
+            throw new IllegalArgumentException("El stock no puede superar los 999,999,999");
         }
         if (product.getMinStock() < 0) {
             throw new IllegalArgumentException("El stock minimo no puede ser negativo");
         }
+        if (product.getMinStock() > 999_999_999) {
+            throw new IllegalArgumentException("El stock minimo no puede superar los 999,999,999");
+        }
     }
 
     public void delete(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El ID del producto es obligatorio");
+        }
+        if (!productDAO.findById(id).isPresent()) {
+            throw new IllegalArgumentException("El producto no existe");
+        }
         if (productDAO.hasInvoiceItems(id)) {
             throw new IllegalArgumentException("No se puede eliminar el producto porque tiene facturas asociadas.");
         }
